@@ -1,26 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class TasksService {
-  create(createTaskDto: CreateTaskDto) {
-    return 'This action adds a new task';
+  constructor(
+   private readonly prismaService: DatabaseService
+
+  ){}
+ async create(dto: CreateTaskDto,userId: string) {
+  if (!dto.title) {
+    throw new BadRequestException('Title is required');
+  }
+  return this.prismaService.task.create({
+    data: {
+      title: dto.title,
+      description: dto.description,
+      status: dto.status ?? 'PENDING',
+      dueDate: dto.dueDate,
+      user: {
+        connect: { id: userId }
+      }
+    }
+  });
+}
+
+  async findAll(userId: string) {
+    const tasks = await this.prismaService.task.findMany({
+      where:{
+        userId:userId
+      }
+    })
+    return tasks;
   }
 
-  findAll() {
-    return `This action returns all tasks`;
+  async findOne(id: string) {
+    const task = await this.prismaService.task.findUnique({
+      where: { id }
+    })
+    return task;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} task`;
+  async update(id: string, updateTaskDto: UpdateTaskDto) {
+    const task = await this.prismaService.task.update({
+      where: { id },
+      data: updateTaskDto
+    })
+    return task;
   }
 
-  update(id: number, updateTaskDto: UpdateTaskDto) {
-    return `This action updates a #${id} task`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} task`;
+  async remove(id: string) {
+    const task = await this.prismaService.task.delete({
+      where: { id }
+    })
   }
 }
+
+
