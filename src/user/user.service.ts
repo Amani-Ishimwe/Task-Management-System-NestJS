@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { User } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { generateToken } from 'src/util/jwtutil';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class UserService {
@@ -33,11 +34,11 @@ export class UserService {
     }
 
     async login(
-        createUserDto: CreateUserDto,
+        loginDto: LoginDto,
     ): Promise<{ user: User; token: string }> {
       // check if the user already exists
       const user = await this.prismaService.user.findUnique({
-        where:{ email: createUserDto.email}
+        where:{ email: loginDto.email}
       });
 
 
@@ -46,7 +47,7 @@ export class UserService {
       }
       const isPasswordSame = await argon2.verify(
         user.password,
-        createUserDto.password,
+        loginDto.password,
       )
       if(!isPasswordSame) throw new BadRequestException('Invalid Credentials')
 
